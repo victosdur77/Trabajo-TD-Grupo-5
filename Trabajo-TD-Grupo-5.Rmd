@@ -1,0 +1,97 @@
+---
+title: "Trabajo TD Grupo 5"
+output: 
+  html_document:
+            toc: yes
+  pdf_document:
+            toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("teoriadecision_funciones_incertidumbre.R")
+library(knitr)
+```
+
+# Descripción del trabajo
+
+Nuestros objetivos a desarrollar en el trabajo asociado a la relación 1 consistirá en: 
+
+1. Construir una función que permita obtener para el Método de Hurwicz todos los valores de $\alpha$ que determinan los intervalos dónde cambian las alternativas óptimas, indicando para cada intervalo cuáles son las alternativas óptimas asociadas.
+
+2. Crear enunciados de problemas en los que se apliquen los métodos de incertidumbre y en
+particular utilizar en todos ellos la función definida en el objetivo anterior.
+
+# Apartado 1)
+
+Hacemos un ejemplo aplicando el metodo Hurwicz con las funciones dadas por el profesor:
+
+```{r}
+tabla1=crea.tablaX(c(2,12,-3,
+                    5,5,-1,
+                    0,10,-2),numalternativas = 3,numestados = 3)
+```
+
+La solución viene dada por:
+
+```{r}
+solucion=criterio.Hurwicz(tabla1, favorable=TRUE)
+solucion
+ 
+```
+
+Procedemos a realizar el gráfico:
+
+```{r}
+dibuja.criterio.Hurwicz(tabla1,favorable = TRUE)
+```
+
+
+Procedemos a definir nuestra funcion en la que tenemos que indicar que alternativa es la elegida para cada valor de alpha:
+
+```{r}
+funcion = function(tablaX, favorable=TRUE){
+  X = tablaX;
+  Altmin = apply(X,MARGIN=1,min);
+  Altmax = apply(X,MARGIN=1,max);
+  valfa = seq(from=0,to=1,by=0.05);
+  vHurwicz = rep(0,length(valfa));
+  Alt_vHurwicz = rep(0,length(valfa));
+  
+  for (i in 1:length(valfa)) {
+    alfab = valfa[i];
+    if (favorable) {
+      vAltH = alfab * Altmax + (1-alfab) * Altmin;
+      vHurwicz[i] = max(vAltH);
+      Alt_vHurwicz[i] = which.max.general(vAltH)
+      
+    } else {
+      vAltH = alfab * Altmin + (1-alfab) * Altmax;
+      vHurwicz[i] = min(vAltH);
+      Alt_vHurwicz[i] = which.min.general(AltH)
+    }
+  }
+  resultados=data.frame(valfa,vHurwicz,Alt_vHurwicz)
+  colnames(resultados)=c("Valores alpha","Valores Hurwicz","Alternativa Optima");
+  kable(resultados)
+  return(resultados)
+  
+  limiteinf=c(valfa[1])
+  limitesup=c()
+  for (i in 1:length(valfa)) {
+      
+      if(Alt_vHurwicz[i]==Alt_vHurwicz[i+1]){
+      }
+      else {
+          limitesup=c(limitesup,valfa[i+1])
+          limiteinf=c(limiteinf,valfa[i+1])
+      }
+   }
+
+  }
+
+  
+funcion(tabla1)
+
+```
+
