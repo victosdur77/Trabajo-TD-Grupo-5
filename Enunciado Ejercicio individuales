@@ -1,0 +1,39 @@
+Ejercicio 1(Victor Toscano Duran)
+
+Estoy estudiando la posibilidad de crear mi propio gimnasio. Se ha informado sobre varios estilos de gimnasio que me han dado los siguientes informes:
+Gimnasio tradicional: El precio de las instalaciones es de (maquinaria y local) es de 50.000 euros y el coste de inscripción por cliente es de 30 euros al mes. En dicho gimnasio el numero máximo de clientes es de 250 personas.
+Gimnasio Low Cost:  Precio de las instalaciones es de 20.000 euros y el coste de inscripción por cliente es de 18 euros al mes. En dicho gimnasio el número máximo de clientes es de 150 personas.
+Instalaciones de Crossfit: El precio de las instalaciones es de 80000 euros y el coste de inscripción por cliente es de 70 euros al mes. En dicho gimnasio el número máximo de clientes es de 200 personas
+El numero de clientes que se inscriben al mes en este gimnasio dependerá de si estamos en plena pandemia.
+Tradicional:
+•	Sin Pandemia:220 clientes
+•	Con Pandemia:120 clientes
+Low Cost:
+•	Sin Pandemia: 145 clientes
+•	Con Pandemia: 120 clientes
+Crossfit:
+•	Sin Pandemia: 170 clientes
+•	Con Pandemia:50 clientes
+
+Alternativas:3
+-Tradicional      
+-Low Cost  
+-Crossfit
+Estados de la naturaleza:2
+-Pandemia        
+-Normalidad
+Los beneficios esperados (en miles de euros) en el año de inauguración será de:
+	
+            Naturalidad	 Pandemia
+Tradicional	   29,2	      -6,8
+Low Cost	     11,32	     5,92
+Crossfit	     62,8	      -38
+
+Valoraciones(beneficios)
+x{1,1} = (220*30*12-50000)/100 = 29,2
+x{1,2} = (120*30*12-50000)/100 = -6,8
+x{2,1} = (145*18*12-20000)/100 = 11,32
+x{2,2} = (120*18*12-20000)/100 = 5,92
+x{3,1} = (170*70*12-80000)/100 = 62,8
+x{3,2} = (50*70*12-80000)/100 = -38
+¿Cuál sería la opción que usted me recomendaría para montar un Gimnasio y obtener beneficios el primer año?
