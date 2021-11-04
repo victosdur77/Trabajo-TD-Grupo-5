@@ -1,6 +1,6 @@
 ---
 title: "Ejercicio Trabajo TD 1"
-author: "Victor Toscano"
+author: "Victor Toscano Duran"
 date: "4/11/2021"
 output: html_document
 ---
