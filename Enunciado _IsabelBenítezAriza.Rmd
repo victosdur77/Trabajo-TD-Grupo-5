@@ -1,0 +1,267 @@
+---
+title: "Trabajo TD1"
+author: "Isabel Benítez Ariza"
+date: "4/11/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("teoriadecision_funciones_incertidumbre.R")
+library(dplyr)
+library(tidyverse)
+library(knitr)
+```
+
+# Descripción del trabajo
+
+Nuestros objetivos a desarrollar en el trabajo asociado a la relación 1 consistirá en:
+
+1.  Construir una función que permita obtener para el Método de Hurwicz todos los valores de $\alpha$ que determinan los intervalos dónde cambian las alternativas óptimas, indicando para cada intervalo cuáles son las alternativas óptimas asociadas.
+
+2.  Crear enunciados de problemas en los que se apliquen los métodos de incertidumbre y en particular utilizar en todos ellos la función definida en el objetivo anterior.
+
+# Enunciado Isabel Benítez Ariza
+
+Juan y su pareja están tratando de decidir dónde van a ir a ver una película y cenar esta noche, pero no llegan a ningún acuerdo. Tienen las siguientes opciones:
+
+- El "Cinesur Nervión Plaza", en el que pagando 12,5 euros cada uno pueden ver una película y, además, tienen un menú de cine por 15 euros más por lo que podrían cenar viéndola. Volverían en metro, lo que les costaría 5 euros más por persona. En otro caso, irían andando.
+
+- El "Yelmo Cines Premium Lagoh", donde pagando 10 cada uno podrían ver la película, incluyendo palomitas del cine, pero no bastaría para cenar; por lo que deberían ir a algún restaurante cercano andando. El más barato costaría 15 euros por persona. El transporte sería el autobús, por lo que añadiríamos 2,5 euros más. En otro caso, irían y volverían en coche, que les costaría 6 euros más entre los dos.
+
+- El "Metromar Cinemas", donde pagando 9 euros cada uno podrían ver la película, pero no incluye menú ya que no se dispone de él. Tendrían que ir a algún restaurante a pie, cuyo precio más barato del menú sería 15 euros por persona. Se moverían en cabify, lo que les costaría 15 euros más entre los dos. En otro caso, irían y volverían en coche, por lo que se le sumarían 5 euros más entre los dos.
+
+¿Qué les recomienda usted que hagan, si su objetivo es minimizar los costes?
+
+## Solución
+
+- Un decisor: Juan y su pareja juntos.
+
+- Trabaja con costos (tabla de decisión desfavorable).
+
+- Alternativas:
+
+  + $d_1$ = "Cinesur Nervión Plaza"
+  + $d_2$ = "Yelmo Cines Premium Lagoh"
+  + $d_3$ = "Metromar Cinemas"
+  
+- Estados de la naturaleza (en ambiente de incertidumbre):
+
+  + $e_1$: "ver la película, comer y transporte público"
+  + $e_2$: "ver la película, comer y transporte privado"
+
+- Matriz de valoraciones o de decisión:
+
+  + Estado $e_1$:
+      - $x_{1,1} = 12.5*2 + 15*2 + 5*2 = 65$
+      - $x_{2,1} = 10*2 + 15*2 + 2.5*2 = 55$
+      - $x_{3,1} = 9*2 + 15*2 + 15 = 63$
+      
+  + Estado $e_2$:
+      - $x_{1,2} = 12.5*2 + 15*2 = 55$
+      - $x_{2,2} = 10*2 + 15*2 + 6 = 56$
+      - $x_{3,2} = 9*2 + 15*2 + 5 = 53$
+      
+Creamos la tabla:
+
+```{r}
+eIsa = crea.tablaX(c(65,55,55,56,63,53), numalternativas = 3, numestados = 2)
+kable(eIsa)
+```
+
+
+
+```{r}
+kable((eIsa.todos = criterio.Todos(eIsa, alfa = 0.5, favorable = F)))
+#Tomamos alfa = 0.5, para considerar equilibrio entre el criterio optimista y pesimista
+```
+
+Según el criterio de Wald (o Maximin en el caso de costos, que es el nuestro) elegimos d2.
+
+Según el criterio Optimista, que supone mínimos costos, elegimos d3.
+
+Según el criterio de Hurwicz, suponiendo que el índice de optimismo es del 0.5, de forma que calcula: alfa x mín + (1-alfa) x máx, elegimos d2.
+
+Según el criterio de Savage, que calcula la matriz de penalizaciones a partir de la diferencia (en valor absoluto) entre "lo mejor" cuando ocurre un determinado estado de la naturaleza y el valor que toma bajo cada decisión, aplicando posteriormente el criterio pesimista, elegimos d2.
+
+Según el criterio de Laplace, que supone que todos los estados tienen la misma probabilidad de ocurrir, elegimos d2.
+
+Según el criterio Punto Ideal, que calcula la distancia euclídea al punto con el que obtendríamos la mejor situación si supiéramos cuál es el estado de la naturaleza que ocurre, elegimos d2.
+
+- **En conclusión, como la mayoría de los criterios elegirían el _Yelmo Cines Premium Lagoh_, podemos decir que esta alternativa sería una buena decisión**.
+
+
+Veamos la representación gráfica de Hurwicz para ver para qué valores de  $\alpha$ elegiríamos una alternativa u otra.
+
+
+```{r}
+dibuja.criterio.Hurwicz(eIsa, favorable = F)
+```
+Ahora, voy a usar la función que hemos creado en nuestro grupo para el método de Hurwicz.
+
+```{r}
+
+tabladominadores= function(X, favorable=TRUE){
+  if(favorable){
+    Altmine = apply(X,MARGIN=1,min);
+    Altmaxe= apply(X,MARGIN=1,max);
+    optimo=c()
+    ganador=c()
+    perdedor=c()
+    for (i in 1:(nrow(X)-1)) {
+      for (j in (i+1):nrow(X)){
+        if (Altmaxe[j]-Altmaxe[i]+Altmine[i]-Altmine[j]!=0){optimo=
+          c(optimo,solve(Altmaxe[j]-Altmaxe[i]+Altmine[i]-Altmine[j],
+                         Altmine[i]-Altmine[j]) )
+        if(Altmine[i]> Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}
+        }
+        else {optimo=c(optimo,2) #Ponemos 2 pero valdría cualquier valor fuera
+        # de [0,1]
+        if(Altmine[i]> Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}}
+      }
+    }
+    optimo
+    ganador
+    perdedor
+    resultados=cbind.data.frame(optimo, ganador, perdedor)
+    #Podemos eliminar todas las alternativas dominadas. En aquellos casos en los 
+    #que
+    #la intersección se produzca fuera del intervalo [0,1]o directamente no se
+    #produzca, lo que nos interesa es que el que esté por encima en 0 lo estará
+    #durante todo el intervalo.
+    dominados=resultados %>% filter(optimo>1 | optimo<0) %>%
+      select(perdedor) %>% as.matrix()
+    resultados=resultados %>% filter ((!perdedor %in% dominados)
+                                      &(!ganador %in% dominados)) %>%
+      arrange(optimo)
+    #Ahora me fijo en el primer registro de la tabla y elimino en los que aparezca
+    #el que ganara en ese registro porque estará ya dominado por el que
+    #le gana a partir de entonces
+    resultados=resultados %>% arrange(optimo)
+    i=1
+    while(i<nrow(resultados)){
+      dominadoapartir=resultados[i,2]
+      resultados=resultados %>% filter ((ganador!= dominadoapartir & perdedor!=
+                                           dominadoapartir)|optimo<=optimo[i])%>%
+        arrange(optimo)
+      i=i+1
+    }
+i=nrow(resultados)
+j=nrow(resultados)
+while(i>1 & i<=j){
+  dominadoapartir2=resultados[i,3]
+  resultados=resultados %>% filter (!((ganador==
+                                         dominadoapartir2 | perdedor==dominadoapartir2) &
+                                        optimo<resultados$optimo[i]))%>%
+    arrange(optimo)
+  j=nrow(resultados)
+  i=i-1
+}
+    valores= c(0,resultados$optimo,1)
+    comienzos=valores[-length(valores)]
+    finales=valores[-1]
+    dominador=c(resultados$ganador,last(resultados$perdedor))
+    mostrar=cbind.data.frame(comienzos, finales, dominador)
+    colnames(mostrar)<-c("Comienzo", "Final", "Dominador")
+    numf=nrow(mostrar)
+    for(i in 1:(numf)){
+      cat("La alternativa",mostrar$`Dominador`[i] ,
+          "es la mejor para valores de alpha entre (",
+          mostrar$`Comienzo`[i],",",mostrar$`Final`[i],")","\n")
+    }
+    
+  } 
+  else{
+    Altmine = apply(X,MARGIN=1,min);
+    Altmaxe= apply(X,MARGIN=1,max);
+    optimo=c()
+    ganador=c()
+    perdedor=c()
+    for (i in 1:(nrow(X)-1)) {
+      for (j in (i+1):nrow(X)){
+        if (Altmine[j]-Altmaxe[j]+Altmaxe[i]-Altmine[i]!=0){optimo=
+          c(optimo,solve(Altmine[j]-Altmaxe[j]+Altmaxe[i]-Altmine[i],
+                         Altmaxe[i]-Altmaxe[j]) )
+        if(Altmine[i]< Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}
+        }
+        else {optimo=c(optimo,2) #Ponemos 2 pero valdría cualquier valor fuera
+        # de [0,1]
+        if(Altmine[i]< Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}}
+      }
+    }
+    optimo
+    ganador
+    perdedor
+    resultados=cbind.data.frame(optimo, ganador, perdedor)
+    #Podemos eliminar todas las alternativas dominadas. En aquellos casos en los que
+    #la intersección se produzca fuera del intervalo [0,1]o directamente no se
+    #produzca, lo que nos interesa es que el que esté por encima en 0 lo estará
+    #durante todo el intervalo.
+    dominados=resultados %>% filter(optimo>1 | optimo<0) %>%
+      select(perdedor) %>% as.matrix()
+    resultados=resultados %>% filter (!perdedor %in% dominados) %>%
+      arrange(optimo)
+    #Ahora me fijo en el primer registro de la tabla y elimino en los que aparezca
+    #el que ganara en ese registro porque estará ya dominado por el que
+    #le gana a partir de entonces
+    resultados=resultados %>% arrange(desc(optimo))
+    i=1
+    while(i<nrow(resultados)){
+      dominadoapartir=resultados[i,2]
+      resultados=resultados %>% filter ((ganador!= dominadoapartir & perdedor!=
+                                           dominadoapartir)|optimo>=
+                                          optimo[i])%>%
+        arrange(desc(optimo))
+      i=i+1
+    }
+    i=nrow(resultados)
+  j=nrow(resultados)
+    #Nos quitamos los cortes no importantes para que no provoquen fallos
+    while(i>1 & i<=j){
+      dominadoapartir2=resultados[i,3]
+      resultados=resultados %>% filter (!((ganador== 
+                                             dominadoapartir2 | perdedor==
+                                             dominadoapartir2) & optimo>resultados$optimo[i]))%>%
+        arrange(desc(optimo))
+      j=nrow(resultados)
+      i=i-1
+    }
+  resultados=resultados %>% arrange(optimo)
+    valores= c(0,resultados$optimo,1)
+    comienzos=valores[-length(valores)]
+    finales=valores[-1]
+    dominador=c(resultados$perdedor,last(resultados$ganador))
+    mostrar=cbind.data.frame(comienzos, finales, dominador)
+    colnames(mostrar)<-c("Comienzo", "Final", "Dominador")
+    numf=nrow(mostrar)
+    for(i in 1:(numf)){
+      cat("La alternativa",mostrar$`Dominador`[i] ,
+          "es la mejor para valores de alpha entre (",
+          mostrar$`Comienzo`[i],",",mostrar$`Final`[i],")","\n")
+    }
+  }
+}
+
+tabladominadores(eIsa, F)
+
+```
+
+Efectivamente, nos salen las alternativas d2 y d3 para los intervalos correspondientes, como nos indicaba la gráfica y la solución con las funciones vistas en clase.
