@@ -15,7 +15,6 @@ source("teoriadecision_funciones_incertidumbre.R")
 
 
 
-
 # Descripción del trabajo
 
 Nuestros objetivos a desarrollar en el trabajo asociado a la relación 1 consistirá en: 
