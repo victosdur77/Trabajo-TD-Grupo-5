@@ -1,5 +1,5 @@
 ---
-title: "pruebaaaaaa"
+title: "Función Hurwizc"
 author: "José Antonio Leal García"
 date: "4/11/2021"
 output: pdf_document
