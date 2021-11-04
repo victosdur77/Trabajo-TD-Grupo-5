@@ -1,0 +1,301 @@
+---
+title: "pruebaaaaaa"
+author: "José Antonio Leal García"
+date: "4/11/2021"
+output: pdf_document
+---
+
+---
+title: "Trabajo 1"
+author: "Isabel Benítez Ariza"
+date: "2/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+library(knitr)
+source("teoriadecision_funciones_incertidumbre.R")
+```
+
+Usando lo que ya han subido mis compañeros:
+
+
+# Descripción del trabajo
+
+Nuestros objetivos a desarrollar en el trabajo asociado a la relación 1 consistirá en: 
+
+1. Construir una función que permita obtener para el Método de Hurwicz todos los valores de $\alpha$ que determinan los intervalos dónde cambian las alternativas óptimas, indicando para cada intervalo cuáles son las alternativas óptimas asociadas.
+
+2. Crear enunciados de problemas en los que se apliquen los métodos de incertidumbre y en
+particular utilizar en todos ellos la función definida en el objetivo anterior.
+
+# Apartado 1)
+
+Hacemos un ejemplo aplicando el metodo Hurwicz con las funciones dadas por el profesor:
+
+```{r}
+tabla1=crea.tablaX(c(2,12,-3,
+                    5,5,-1,
+                    0,10,-2),numalternativas = 3,numestados = 3)
+```
+
+La solución viene dada por:
+
+```{r}
+solucion=criterio.Hurwicz(tabla1, favorable=FALSE)
+solucion
+ 
+```
+
+Procedemos a realizar el gráfico:
+
+```{r}
+dibuja.criterio.Hurwicz(tabla1,favorable = FALSE)
+```
+
+
+Procedemos a definir nuestra funcion en la que tenemos que indicar que alternativa es la elegida para cada valor de alpha:
+
+```{r}
+tabladominadores= function(X, favorable=TRUE){
+  if(favorable){
+    Altmine = apply(X,MARGIN=1,min);
+    Altmaxe= apply(X,MARGIN=1,max);
+    optimo=c()
+    ganador=c()
+    perdedor=c()
+    for (i in 1:(nrow(X)-1)) {
+      for (j in (i+1):nrow(X)){
+        if (Altmaxe[j]-Altmaxe[i]+Altmine[i]-Altmine[j]!=0){optimo=c(optimo,
+                                                                     solve(Altmaxe[j]-Altmaxe[i]+Altmine[i]-Altmine[j],                                                                                  Altmine[i]-Altmine[j]) )
+        if(Altmine[i]> Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}
+        }
+        else {optimo=c(optimo,2) #Ponemos 2 pero valdría cualquier valor fuera
+        # de [0,1]
+        if(Altmine[i]> Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}}
+      }
+    }
+    optimo
+    ganador
+    perdedor
+    resultados=cbind.data.frame(optimo, ganador, perdedor)
+    #Podemos eliminar todas las alternativas dominadas. En aquellos casos en los 
+    #que
+    #la intersección se produzca fuera del intervalo [0,1]o directamente no se
+    #produzca, lo que nos interesa es que el que esté por encima en 0 lo estará
+    #durante todo el intervalo.
+    dominados=resultados %>% filter(optimo>1 | optimo<0) %>% select(perdedor) %>% as.matrix()
+    resultados=resultados %>% filter ((!perdedor %in% dominados) &(!ganador %in% dominados)) %>% arrange(optimo)
+    #Ahora me fijo en el primer registro de la tabla y elimino en los que aparezca
+    #el que ganara en ese registro porque estará ya dominado por el que
+    #le gana a partir de entonces
+    resultados=resultados %>% arrange(optimo)
+    i=1
+    while(i<nrow(resultados)){
+      dominadoapartir=resultados[i,2]
+      resultados=resultados %>% filter ((ganador!= dominadoapartir & perdedor!=dominadoapartir)|optimo<=optimo[i])%>% arrange(optimo)
+      i=i+1
+    }
+i=nrow(resultados)
+j=nrow(resultados)
+while(i>1 & i<=j){
+  dominadoapartir2=resultados[i,3]
+  resultados=resultados %>% filter (!((ganador== dominadoapartir2 | perdedor==dominadoapartir2) &
+                                        optimo<resultados$optimo[i]))%>% arrange(optimo)
+  j=nrow(resultados)
+  i=i-1
+}
+    valores= c(0,resultados$optimo,1)
+    comienzos=valores[-length(valores)]
+    finales=valores[-1]
+    dominador=c(resultados$ganador,last(resultados$perdedor))
+    mostrar=cbind.data.frame(comienzos, finales, dominador)
+    colnames(mostrar)<-c("Comienzo", "Final", "Dominador")
+    numf=nrow(mostrar)
+    for(i in 1:(numf)){
+      cat("La alternativa",mostrar$`Dominador`[i] ,"es la mejor para valores de alpha entre (",mostrar$`Comienzo`[i],",",mostrar$`Final`[i],")","\n")
+    }
+    
+  } 
+  else{
+    Altmine = apply(X,MARGIN=1,min);
+    Altmaxe= apply(X,MARGIN=1,max);
+    optimo=c()
+    ganador=c()
+    perdedor=c()
+    for (i in 1:(nrow(X)-1)) {
+      for (j in (i+1):nrow(X)){
+        if (Altmine[j]-Altmaxe[j]+Altmaxe[i]-Altmine[i]!=0){optimo=c(optimo,solve(Altmine[j]-Altmaxe[j]+Altmaxe[i]-Altmine[i],
+                                                                                  Altmaxe[i]-Altmaxe[j]) )
+        if(Altmine[i]< Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}
+        }
+        else {optimo=c(optimo,2) #Ponemos 2 pero valdría cualquier valor fuera
+        # de [0,1]
+        if(Altmine[i]< Altmine[j]){
+          ganador=c(ganador,i)
+          perdedor=c(perdedor,j)
+        } else {ganador=c(ganador,j)
+        perdedor=c(perdedor,i)}}
+      }
+    }
+    optimo
+    ganador
+    perdedor
+    resultados=cbind.data.frame(optimo, ganador, perdedor)
+    #Podemos eliminar todas las alternativas dominadas. En aquellos casos en los que
+    #la intersección se produzca fuera del intervalo [0,1]o directamente no se
+    #produzca, lo que nos interesa es que el que esté por encima en 0 lo estará
+    #durante todo el intervalo.
+    dominados=resultados %>% filter(optimo>1 | optimo<0) %>% select(perdedor) %>% as.matrix()
+    resultados=resultados %>% filter (!perdedor %in% dominados) %>% arrange(optimo)
+    #Ahora me fijo en el primer registro de la tabla y elimino en los que aparezca
+    #el que ganara en ese registro porque estará ya dominado por el que
+    #le gana a partir de entonces
+    resultados=resultados %>% arrange(desc(optimo))
+    i=1
+    while(i<nrow(resultados)){
+      dominadoapartir=resultados[i,2]
+      resultados=resultados %>% filter ((ganador!= dominadoapartir & perdedor!=dominadoapartir)|
+                                          optimo>=optimo[i])%>% arrange(desc(optimo))
+      i=i+1
+    }
+    i=nrow(resultados)
+  j=nrow(resultados)
+    #Nos quitamos los cortes no importantes para que no provoquen fallos
+    while(i>1 & i<=j){
+      dominadoapartir2=resultados[i,3]
+      resultados=resultados %>% filter (!((ganador== dominadoapartir2 | perdedor==dominadoapartir2) &
+                                          optimo>resultados$optimo[i]))%>% arrange(desc(optimo))
+      j=nrow(resultados)
+      i=i-1
+    }
+  resultados=resultados %>% arrange(optimo)
+    valores= c(0,resultados$optimo,1)
+    comienzos=valores[-length(valores)]
+    finales=valores[-1]
+    dominador=c(resultados$perdedor,last(resultados$ganador))
+    mostrar=cbind.data.frame(comienzos, finales, dominador)
+    colnames(mostrar)<-c("Comienzo", "Final", "Dominador")
+    numf=nrow(mostrar)
+    for(i in 1:(numf)){
+      cat("La alternativa",mostrar$`Dominador`[i] ,"es la mejor para valores de alpha entre (",mostrar$`Comienzo`[i],",",mostrar$`Final`[i],")","\n")
+    }
+  }
+}
+
+tabladominadores(tabla1, F)
+
+```
+
+
+
+## Prueba 1a
+
+```{r}
+tb01a= crea.tablaX(c(5,4,6,2,3,1,-1,8,7,5,2,0), numalternativas=4, numestados = 3)
+tb01a
+```
+
+```{r}
+tabladominadores(tb01a)
+```
+
+
+```{r}
+dibuja.criterio.Hurwicz(tb01a)
+```
+
+## Prueba 1b
+
+
+```{r}
+tb01b = crea.tablaX(c(2,12,-3, 5, 5, -1, 0, 10, -2), numalternativas=3, numestados=3)
+```
+
+```{r}
+dibuja.criterio.Hurwicz(tb01b, favorable=F)
+```
+
+```{r}
+tabladominadores(tb01b, favorable = F)
+```
+
+## Prueba 4
+
+
+```{r}
+tb04=crea.tablaX(c(30*12+1800, 30*12, 60*12, 60*12, 40*12+3000, 40*12), numalternativas=3, numestados = 2)
+```
+
+```{r}
+dibuja.criterio.Hurwicz(tb04, favorable = F)
+```
+
+```{r}
+tabladominadores(tb04, favorable = F)
+```
+
+## Tabla 5
+
+
+```{r}
+tb05 = crea.tablaX(c(125, 120, 156, 60, 130, 80), numalternativas = 3, numestados=2)
+```
+
+```{r}
+dibuja.criterio.Hurwicz(tb05, F)
+```
+
+```{r}
+tabladominadores(tb05,F)
+```
+## Prueba 6
+
+```{r}
+tb06 = crea.tablaX(c(55, 5, 
+                     70, -30, 
+                     85, -65), numalternativas = 3, numestados=2)
+```
+
+
+```{r}
+dibuja.criterio.Hurwicz(tb06)
+```
+
+```{r}
+tabladominadores(tb06)
+```
+
+
+
+## Prueba 7
+
+```{r}
+tb07 = crea.tablaX(c(45, 45, 
+                     540, -180, 
+                     900, -900), numalternativas = 3, numestados=2)
+```
+
+```{r}
+dibuja.criterio.Hurwicz(tb07)
+```
+
+```{r}
+tabladominadores(tb07)
+```
+
